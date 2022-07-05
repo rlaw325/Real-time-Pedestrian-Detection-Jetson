@@ -1,0 +1,80 @@
+
+Jetson Xavier Nx Requirement
+Jetpack 4.6.1
+Deepstream 6.0.1
+matplotlib 3.3.4
+numpy 1.19.5
+seaborn 0.11.0
+scipy 1.5.4
+cv2 4.1.1
+pandas 1.1.5
+tqdm 4.64.0
+torch 1.8.0
+torchvision 0.9.0
+PIL 8.4.0
+Requests 2.18.4
+IMX 477 drivers
+
+Boost performance-: 
+sudo jetson_clocks
+sudo nvpmodel -m 8
+1.
+YOLOV5
+Once training completed (/content/yolov5/runs/train/exp/weights/best.pt) export the best.pt from colab to the yolov5 main folder on jetson
+
+test with images
+open terminal, navigate to yolov5 folder
+if u have your own image/video,put it in the yolov5 folder
+python3 detect.py --weights best.pt --source 1.png
+test with videos
+python3 detect.py --weights best.pt --source A.mp4
+
+navigate to runs directory to see results
+
+2.
+TENSORRT
+copy gen_wts.py from tensorRT folder to yolov5 folder
+##Convert .pt to .wts in yolov5 folder
+python gen_wts.py -w best.pt -o best.wts
+best.wts is created
+
+go in TENSORRT folder and cr8 a new folder,build.
+copy the best.wts created in yolov5 and put it in the build folder of TENSORRT
+go in build folder and open terminal
+cmake ..
+make
+./yolov5 -s best.wts best.engine s
+building engine...
+Once completed, best.engine is created
+copy libmyplugins.so from tensorRT build to deepstream 5.0 folder if dont have in the folder
+
+3.
+##Deepstream Folder
+https://docs.nvidia.com/metropolis/deepstream/6.0.1/dev-guide/text/DS_Quickstart.html
+
+In Deepstream 5.0/nvdsinfer_custom_impl_Yolo Directory,
+make sure 'makefile' use CUDA=10.2 then exec 'make' command in terminal
+you will get libnvdsinfer_custom_impl_ once done
+
+go back to Deepstream 5.0 folder ,open terminal
+Test on video without display
+
+LD_PRELOAD=./libmyplugins.so deepstream-app -c deepstream_app_config_yoloV5.txt
+in deepstream_app_config_yoloV5.txt edit :
+#Type - 1=FakeSink 2=EglSink 3=File
+put type=3
+
+Once completed a mp4 file is created  in the folder
+
+Test on video with display
+LD_PRELOAD=./libmyplugins.so deepstream-app -c deepstream_app_config_yoloV5.txt
+in deepstream_app_config_yoloV5.txt edit :
+#Type - 1=FakeSink 2=EglSink 3=File
+put type=2
+
+Test on Real-time
+check if camera is attached : ls /dev/video0
+
+LD_PRELOAD=./libmyplugins.so deepstream-app -c deepstream_app_config_c.txt
+
+
